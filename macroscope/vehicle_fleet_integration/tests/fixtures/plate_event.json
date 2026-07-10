@@ -1,0 +1,17 @@
+{
+  "InitiatorName": "ExternalEvent",
+  "EventId": "c9d6d086-c965-4cf8-aef6-85b3894e3a4a",
+  "EventType": "Info",
+  "EventDescription": "Обнаружен автономер",
+  "ChannelId": "7d53f293-70d9-45df-9243-afe5fac19c65",
+  "ChannelName": "КПП Въезд",
+  "Timestamp": "26.03.2024 11:23:22",
+  "ZonedTimestamp": "26.03.2024 11:23:22.200 +05:00",
+  "Numberplate": "A123BC77",
+  "plateText": "A123BC77",
+  "Reliability": "0,9999972581863403",
+  "direction": "Въезд",
+  "RecognizedCarBrand": "Toyota",
+  "RecognizedCarColors": "Желтый",
+  "RecognizedCarType": "Легковой"
+}
