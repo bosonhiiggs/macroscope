@@ -8,6 +8,7 @@ from vehicle_fleet_integration.event_parser import extract_plate_event, parse_ev
 from vehicle_fleet_integration.event_processor import process_plate_event
 
 logger = logging.getLogger(__name__)
+raw_logger = logging.getLogger(__name__ + '.raw')
 
 MAX_BACKOFF_SEC = 60
 
@@ -25,6 +26,7 @@ def run_stream_worker(terminal, *, channel_id=None, event_filter=None, mode=None
             logger.info('Подключение к потоку событий Macroscop (терминал %s)', terminal.pk)
             for line in client.stream_events(channel_id=channel_id, event_filter=event_filter, mode=mode):
                 backoff = 1
+                raw_logger.debug('RAW: %s', line)
                 data = parse_event_line(line)
                 if data is None:
                     continue

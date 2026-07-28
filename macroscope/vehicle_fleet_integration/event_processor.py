@@ -20,13 +20,15 @@ def _resolve_direction(parsed_event, gate_camera):
     return None
 
 
-def process_plate_event(parsed_event, *, terminal, min_reliability=None, dedup_window_sec=None):
+def process_plate_event(parsed_event, *, terminal, min_reliability=None, dedup_window_sec=None, source=None):
     """Алгоритм обработки события "Обнаружен автономер" (см. план T-068).
 
     Возвращает созданный VehicleGatePass, либо None, если событие отброшено
     (низкая достоверность, дубликат по EventId, дубликат в окне дедупликации,
     не удалось определить направление).
     """
+    if source is None:
+        source = GatePassSource.MACROSCOP
     config = settings.MACROSCOP_INTEGRATION
     if min_reliability is None:
         min_reliability = config['MIN_RELIABILITY']
@@ -40,8 +42,8 @@ def process_plate_event(parsed_event, *, terminal, min_reliability=None, dedup_w
         )
         return None
 
-    if VehicleGatePass.objects.filter(macroscop_event_id=parsed_event.event_id).exists():
-        logger.warning('Дубликат события Macroscop: %s', parsed_event.event_id)
+    if source != GatePassSource.MACROSCOP and VehicleGatePass.objects.filter(macroscop_event_id=parsed_event.event_id).exists():
+        logger.warning('Дубликат события %s: %s', source, parsed_event.event_id)
         return None
 
     registration_number = PlateNormalizer.normalize(parsed_event.numberplate)
@@ -89,12 +91,12 @@ def process_plate_event(parsed_event, *, terminal, min_reliability=None, dedup_w
             registration_number=registration_number,
             direction=direction,
             passed_at=parsed_event.passed_at,
-            source=GatePassSource.MACROSCOP,
+            source=source,
             reliability=parsed_event.reliability,
             recognized_brand=parsed_event.recognized_brand,
             recognized_color=parsed_event.recognized_color,
             recognized_type=parsed_event.recognized_type,
-            macroscop_event_id=parsed_event.event_id,
+            macroscop_event_id=parsed_event.event_id if source != GatePassSource.MACROSCOP else None,
             raw_event=parsed_event.raw,
         )
         MacroscopIntegrationState.objects.update_or_create(

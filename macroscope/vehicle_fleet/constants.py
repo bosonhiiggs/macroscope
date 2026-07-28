@@ -13,6 +13,7 @@ class GatePassDirection(models.TextChoices):
 
 class GatePassSource(models.TextChoices):
     MACROSCOP = 'macroscop', 'Macroscop'
+    DAHUA = 'dahua', 'Dahua'
     MANUAL = 'manual', 'Вручную'
 
 

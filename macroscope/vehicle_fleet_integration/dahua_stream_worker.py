@@ -5,6 +5,7 @@ import requests
 
 from vehicle_fleet_integration.dahua_client import DahuaHttpClient
 from vehicle_fleet_integration.dahua_event_parser import extract_plate_event_dahua
+from vehicle_fleet.constants import GatePassSource
 from vehicle_fleet_integration.event_processor import process_plate_event
 
 logger = logging.getLogger(__name__)
@@ -42,6 +43,7 @@ def run_dahua_stream_worker(terminal, *, gate_camera=None, client=None, stop_eve
 
                 result = process_plate_event(
                     parsed_event, terminal=terminal, min_reliability=min_reliability,
+                    source=GatePassSource.DAHUA,
                 )
                 if result is not None:
                     logger.info(

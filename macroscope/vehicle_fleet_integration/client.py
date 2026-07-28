@@ -93,7 +93,8 @@ class MacroscopHttpClient:
             params['mode'] = mode
 
         response = requests.get(
-            f'{self.base_url}/event', params=params, stream=True, timeout=self.timeout,
+            f'{self.base_url}/event', params=params, stream=True,
+            timeout=(self.timeout, None),  # connect timeout, без таймаута на чтение
         )
         response.raise_for_status()
         buffer = []

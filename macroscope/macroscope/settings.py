@@ -176,6 +176,12 @@ LOGGING = {
             'class': 'logging.StreamHandler',
             'formatter': 'ts',
         },
+        'macroscop_raw_file': {
+            'class': 'logging.FileHandler',
+            'filename': env('MACROSCOP_RAW_LOG', default='/tmp/macroscop_raw.log'),
+            'formatter': 'ts',
+            'encoding': 'utf-8',
+        },
     },
     'root': {
         'handlers': ['console'],
@@ -185,6 +191,11 @@ LOGGING = {
         'vehicle_fleet_integration': {
             'handlers': ['console'],
             'level': 'INFO',
+            'propagate': False,
+        },
+        'vehicle_fleet_integration.stream_worker.raw': {
+            'handlers': ['macroscop_raw_file'],
+            'level': 'DEBUG',
             'propagate': False,
         },
     },
