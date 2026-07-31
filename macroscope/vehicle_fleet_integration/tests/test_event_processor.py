@@ -51,12 +51,30 @@ class ProcessPlateEventTests(TestCase):
         self.assertIsNotNone(gate_pass)
         self.assertIsNone(gate_pass.fleet_vehicle)
 
-    def test_duplicate_event_id_is_skipped(self):
-        first = process_plate_event(self._parsed(), terminal=self.terminal)
+    def test_duplicate_event_id_skipped_for_dahua(self):
+        # Для Dahua дубликат по EventId отбрасывается жёстко
+        from vehicle_fleet_integration.event_parser import ParsedPlateEvent
+        import datetime
+        from datetime import timezone as dt_timezone
+        parsed = self._parsed()
+        first = process_plate_event(parsed, terminal=self.terminal, source=GatePassSource.DAHUA)
         self.assertIsNotNone(first)
-        second = process_plate_event(self._parsed(), terminal=self.terminal)
+        second = process_plate_event(parsed, terminal=self.terminal, source=GatePassSource.DAHUA)
         self.assertIsNone(second)
         self.assertEqual(VehicleGatePass.objects.count(), 1)
+
+    def test_duplicate_event_id_not_checked_for_macroscop(self):
+        # Для Macroscop одинаковый EventId не блокирует — защита через окно дедупликации
+        first = process_plate_event(self._parsed(), terminal=self.terminal)
+        self.assertIsNotNone(first)
+        # Второй вызов с тем же EventId но за пределами окна дедупликации — должен пройти
+        import datetime
+        from vehicle_fleet_integration.event_parser import ParsedPlateEvent
+        parsed2 = self._parsed()
+        parsed2.passed_at = parsed2.passed_at + datetime.timedelta(seconds=120)
+        second = process_plate_event(parsed2, terminal=self.terminal)
+        self.assertIsNotNone(second)
+        self.assertEqual(VehicleGatePass.objects.count(), 2)
 
     def test_low_reliability_is_dropped(self):
         parsed = self._parsed(overrides={'Reliability': '0,3'})

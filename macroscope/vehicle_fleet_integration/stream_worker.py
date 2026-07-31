@@ -30,10 +30,19 @@ def run_stream_worker(terminal, *, channel_id=None, event_filter=None, mode=None
                 data = parse_event_line(line)
                 if data is None:
                     continue
-                parsed_event = extract_plate_event(data)
-                if parsed_event is None:
+                logger.info('Событие Macroscop: EventId=%s EventDescription=%s', data.get('EventId'), data.get('EventDescription'))
+                try:
+                    parsed_event = extract_plate_event(data)
+                except Exception as exc:
+                    logger.exception('Ошибка парсера для события %s: %s', data.get('EventId'), exc)
                     continue
-                process_plate_event(parsed_event, terminal=terminal)
+                if parsed_event is None:
+                    logger.info('Событие отброшено парсером (не номерное или неполное): %s', data)
+                    continue
+                try:
+                    process_plate_event(parsed_event, terminal=terminal)
+                except Exception as exc:
+                    logger.exception('Ошибка обработки события %s: %s', parsed_event.event_id, exc)
         except requests.RequestException as exc:
             logger.warning('Поток событий Macroscop прервался: %s. Реконнект через %ss', exc, backoff)
 

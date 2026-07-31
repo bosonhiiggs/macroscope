@@ -97,7 +97,13 @@ class MacroscopHttpClient:
             timeout=(self.timeout, None),  # connect timeout, без таймаута на чтение
         )
         response.raise_for_status()
+        # Macroscop шлёт события двумя последовательными JSON-объектами:
+        # первый — шапка (EventId, ChannelId, Timestamp, EventDescription, ...),
+        # второй — данные (Numberplate, Reliability, direction, ...).
+        # Мержим их в один словарь и отдаём вызывающему коду.
+        import json
         buffer = []
+        pending = {}
         for line in response.iter_lines(decode_unicode=True):
             if line is None:
                 continue
@@ -106,7 +112,25 @@ class MacroscopHttpClient:
                 continue
             buffer.append(stripped)
             if stripped == '}':
-                yield '\n'.join(buffer)
+                raw = '\n'.join(buffer)
                 buffer = []
-        if buffer:
-            yield '\n'.join(buffer)
+                try:
+                    obj = json.loads(raw)
+                except (ValueError, TypeError):
+                    yield raw  # отдаём как есть, parse_event_line обработает ошибку
+                    pending = {}
+                    continue
+                if not pending:
+                    pending = obj
+                elif obj.get('InitiatorName') == 'System' or not obj.get('EventDescription'):
+                    # Второй объект — тоже шапка или KeepAlive; предыдущий отдаём как есть
+                    yield json.dumps(pending, ensure_ascii=False)
+                    pending = obj
+                else:
+                    # Второй объект — данные события; мержим, шапка имеет приоритет
+                    merged = dict(obj)
+                    merged.update(pending)
+                    yield json.dumps(merged, ensure_ascii=False)
+                    pending = {}
+        if pending:
+            yield json.dumps(pending, ensure_ascii=False)
